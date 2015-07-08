@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+
+
+__author__ = "Judge Maygarden"
+__copyright__ = "Copyright 2015, Judge Maygarden"
+
+
 from config import config
 import json
 import os
