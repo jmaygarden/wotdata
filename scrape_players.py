@@ -167,9 +167,12 @@ def main():
             or MIN_ACCOUNT_ID
     total = 0
 
+    sys.stdout.write('Start: {0}\n'.format(time.asctime()))
+
     for account_id in xrange(start, MAX_ACCOUNT_ID, MAX_BATCH_SIZE):
         sys.stdout.write('\rAccount #{0}-{1}'.format(
             account_id, account_id + MAX_BATCH_SIZE))
+        sys.stdout.flush()
 
         batch = xrange(account_id, account_id + MAX_BATCH_SIZE)
         info = get_account_info(batch)
@@ -186,7 +189,7 @@ def main():
         tanks = get_account_tanks(batch)
         insert_account_tanks(db, tanks)
 
-    sys.stdout.write('\nTotal: {0}\n'.format(total))
+    sys.stdout.write('\nStop:  {0}\nTotal: {1}\n'.format(time.asctime(), total))
 
 
 if __name__ == '__main__':
