@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 
+""" This script scrapes the necessary statistics for calculating the WN8 of all players on the US World of Tanks server."""
+
 __author__ = "Judge Maygarden"
 __copyright__ = "Copyright 2015, Judge Maygarden"
 
@@ -116,7 +118,7 @@ def main():
             or MIN_ACCOUNT_ID
 
     for account_id in xrange(start, MAX_ACCOUNT_ID, MAX_BATCH_SIZE):
-        print '\r{0}'.format(account_id)
+        print account_id
         batch = xrange(account_id, account_id + MAX_BATCH_SIZE)
         players = get_players(batch, FIELDS)
         n = insert_players(db, players)
