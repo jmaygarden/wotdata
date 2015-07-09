@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-
 """ This script scrapes the necessary statistics for calculating the WN8 of all players on the US World of Tanks server."""
 
 __author__ = "Judge Maygarden"
@@ -8,74 +7,14 @@ __copyright__ = "Copyright 2015, Judge Maygarden"
 
 
 from config import config
-import json
-import os
-import requests
-import sqlite3
+from api import *
+from sqlite3 import connect
 import sys
 import time
 
 
-CONNECTION_TIMEOUT = 10.0
-MIN_ACCOUNT_ID = 1000000000
-MAX_ACCOUNT_ID = 1100000000
-MAX_BATCH_SIZE = 100
-
-
-def fetch_json(url):
-    r = requests.get(
-            url,
-            headers={'X-Requested-With': 'XMLHttpRequest'},
-            timeout=CONNECTION_TIMEOUT)
-    return json.loads(r.text)
-
-
-def fetch_wot(endpoint, params=None, fields=None):
-    url = 'http://api.worldoftanks.com/wot/{0}/?application_id={1}'.format(
-            endpoint, config['WOT_APPLICATION_ID'])
-    if params is not None:
-        url += '&{0}'.format('&'.join(params))
-    if fields is not None:
-        url += '&fields=%s' % ','.join(fields)
-    return fetch_json(url)
-
-
-def get_account(endpoint, players, fields=None):
-    r =  fetch_wot(
-            endpoint,
-            [ 'account_id={0}'.format(','.join(map(str, players))) ],
-            fields)
-    if 'data' in r:
-        return r['data']
-    else:
-        raise Exception(r)
-
-
-def get_account_info(players):
-    fields = [
-            'clan_id',
-            'created_at',
-            'last_battle_time',
-            'logout_at',
-            'nickname',
-            'updated_at',
-            'statistics.all.battles',
-            'statistics.all.damage_dealt',
-            'statistics.all.frags',
-            'statistics.all.spotted',
-            'statistics.all.wins',
-            'statistics.all.dropped_capture_points',
-            ]
-    return get_account('account/info', players, fields)
-
-
-def get_account_tanks(players):
-    fields = [ 'tank_id', 'statistics.battles' ]
-    return get_account('account/tanks', players, fields)
-
-
 def init_db():
-    connection = sqlite3.connect('wotdata.db')
+    connection = connect('wotdata.db')
     cursor = connection.cursor()
 
     fmt = 'CREATE TABLE IF NOT EXISTS {0}({1})'
@@ -164,30 +103,38 @@ def main():
     db = init_db()
 
     start = db.execute('SELECT MAX(account_id) FROM players').fetchone()[0] \
-            or MIN_ACCOUNT_ID
+            or Config.MIN_ACCOUNT_ID
+    if start > Config.MIN_ACCOUNT_ID:
+        start += 1
     total = 0
+    consecutive_empty_batches = 0
 
     sys.stdout.write('Start: {0}\n'.format(time.asctime()))
 
-    for account_id in xrange(start, MAX_ACCOUNT_ID, MAX_BATCH_SIZE):
+    for account_id in xrange(start, Config.MAX_ACCOUNT_ID, Config.MAX_BATCH_SIZE):
         sys.stdout.write('\rAccount #{0}-{1}'.format(
-            account_id, account_id + MAX_BATCH_SIZE))
+            account_id, account_id + Config.MAX_BATCH_SIZE))
         sys.stdout.flush()
 
-        batch = xrange(account_id, account_id + MAX_BATCH_SIZE)
+        batch = xrange(account_id, account_id + Config.MAX_BATCH_SIZE)
         info = get_account_info(batch)
         n = insert_account_info(db, info)
         total += n
         if 0 == n:
-            break
+            consecutive_empty_batches += 1
+            if consecutive_empty_batches >= 10:
+                break
+        else:
+            consecutive_empty_batches = 0
 
         batch = [
                 int(key)
                 for (key, value) in info.iteritems()
                 if value is not None
                 ]
-        tanks = get_account_tanks(batch)
-        insert_account_tanks(db, tanks)
+        if 0 < len(batch):
+            tanks = get_account_tanks(batch)
+            insert_account_tanks(db, tanks)
 
     sys.stdout.write('\nStop:  {0}\nTotal: {1}\n'.format(time.asctime(), total))
 
