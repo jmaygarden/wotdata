@@ -6,7 +6,7 @@ __author__ = "Judge Maygarden"
 __copyright__ = "Copyright 2015, Judge Maygarden"
 
 
-from config import config
+from config import Config
 from api import *
 from sqlite3 import connect
 import sys
@@ -122,8 +122,8 @@ def main():
         total += n
         if 0 == n:
             consecutive_empty_batches += 1
-            if consecutive_empty_batches >= 10:
-                break
+            #if consecutive_empty_batches >= 10:
+            #    break
         else:
             consecutive_empty_batches = 0
 
