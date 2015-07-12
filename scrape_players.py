@@ -14,7 +14,7 @@ import time
 
 
 def init_db():
-    connection = connect('wotdata.db')
+    connection = connect(Config.DB_PATH)
     cursor = connection.cursor()
 
     fmt = 'CREATE TABLE IF NOT EXISTS {0}({1})'
@@ -116,25 +116,31 @@ def main():
             account_id, account_id + Config.MAX_BATCH_SIZE))
         sys.stdout.flush()
 
-        batch = xrange(account_id, account_id + Config.MAX_BATCH_SIZE)
-        info = get_account_info(batch)
-        n = insert_account_info(db, info)
-        total += n
-        if 0 == n:
-            consecutive_empty_batches += 1
-            #if consecutive_empty_batches >= 10:
-            #    break
-        else:
-            consecutive_empty_batches = 0
+        while True:
+            try:
+                batch = xrange(account_id, account_id + Config.MAX_BATCH_SIZE)
+                info = get_account_info(batch)
+                n = insert_account_info(db, info)
+                total += n
+                if 0 == n:
+                    consecutive_empty_batches += 1
+                    #if consecutive_empty_batches >= 10:
+                    #    break
+                else:
+                    consecutive_empty_batches = 0
 
-        batch = [
-                int(key)
-                for (key, value) in info.iteritems()
-                if value is not None
-                ]
-        if 0 < len(batch):
-            tanks = get_account_tanks(batch)
-            insert_account_tanks(db, tanks)
+                batch = [
+                        int(key)
+                        for (key, value) in info.iteritems()
+                        if value is not None
+                        ]
+                if 0 < len(batch):
+                    tanks = get_account_tanks(batch)
+                    insert_account_tanks(db, tanks)
+
+                break
+            except Exception, e:
+                print e
 
     sys.stdout.write('\nStop:  {0}\nTotal: {1}\n'.format(time.asctime(), total))
 
