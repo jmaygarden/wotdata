@@ -25,7 +25,7 @@ def fetch_wot(endpoint, params=None, fields=None):
     if params is not None:
         url += '&{0}'.format('&'.join(params))
     if fields is not None:
-        url += '&fields=%s' % ','.join(fields)
+        url += '&fields={0}'.format(','.join(fields))
     return fetch_json(url)
 
 
