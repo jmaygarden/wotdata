@@ -63,3 +63,34 @@ def get_account_tanks(players):
     return get_account('account/tanks', players, fields)
 
 
+def get_clan(endpoint, clanId, fields=None):
+    r =  fetch_wot(
+            endpoint,
+            [ 'clan_id={0}'.format(clanId) ],
+            fields)
+    if 'data' in r:
+        return r['data']
+    else:
+        raise Exception(r)
+
+
+def get_globalmap_claninfo(clanId):
+    fields = [
+            'name',
+            'tag'
+            ]
+    return get_clan('globalmap/claninfo', clanId, fields)
+
+
+def get_globalmap_clanbattles(clanId):
+    fields = [
+            'attack_type',
+            'competitor_id',
+            'front_name',
+            'province_name',
+            'time',
+            'type'
+            ]
+    return get_clan('globalmap/clanbattles', clanId, fields)
+
+
